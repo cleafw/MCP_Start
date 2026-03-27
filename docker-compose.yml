@@ -1,0 +1,36 @@
+# Seeed MCP_Start Docker Compose
+# 用于快速部署到目标设备
+
+services:
+  mcp-server:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: seeed-mcp-server
+    restart: unless-stopped
+    environment:
+      - PYTHONUNBUFFERED=1
+      - MCP_ENDPOINT=${MCP_ENDPOINT}
+    # 标准输入输出模式（MCP stdio 协议）
+    # 适用于: docker run -it seeed-mcp-server
+    stdin_open: true
+    tty: true
+    # 如果需要 WebSocket 模式，取消下面注释并配置端口映射
+    # ports:
+    #   - "9090:9090"
+    # 网络模式：host 模式直接使用宿主机网络（Kiosk 浏览器需要）
+    network_mode: host
+
+  # 备选：WebSocket 模式（适用于网络连接场景）
+  # mcp-server-ws:
+  #   build:
+  #     context: .
+  #     dockerfile: Dockerfile
+  #   container_name: seeed-mcp-server-ws
+  #   restart: unless-stopped
+  #   environment:
+  #     - PYTHONUNBUFFERED=1
+  #     - MCP_ENDPOINT=${MCP_ENDPOINT}
+  #   ports:
+  #     - "9090:9090"
+  #   # WebSocket 模式不需要 host 网络

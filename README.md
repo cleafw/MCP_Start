@@ -340,6 +340,114 @@ WantedBy=multi-user.target
 
 ---
 
+## Docker 部署（可选）
+
+Docker 部署可以实现在任何设备上「一次构建，到处运行」，无需手动配置 Python 环境。
+
+### 准备 Dockerfile
+
+已提供 `Dockerfile`，包含：
+- Python 3.11 slim 基础镜像
+- 自动安装 `colorlog`、`websockets`、`python-dotenv`
+- 非 root 用户 `recomputer` 运行（密码 12345678）
+
+### 快速部署（目标设备上执行）
+
+```bash
+# 1. 克隆项目（或拷贝 docker-compose.yml + Dockerfile）
+cd /home/recomputer/Seeed/Project
+
+# 2. 构建镜像
+docker build -t seeed-mcp-server .
+
+# 3. 运行容器
+docker run -d --name seeed-mcp \
+  --network host \
+  -e PYTHONUNBUFFERED=1 \
+  -e MCP_ENDPOINT="your_token_here" \
+  seeed-mcp-server
+
+# 4. 查看日志
+docker logs -f seeed-mcp
+```
+
+### 使用 docker-compose（推荐）
+
+```yaml
+# 已提供 docker-compose.yml
+services:
+  mcp-server:
+    build: .
+    container_name: seeed-mcp-server
+    restart: unless-stopped
+    environment:
+      - PYTHONUNBUFFERED=1
+      - MCP_ENDPOINT=${MCP_ENDPOINT}
+    network_mode: host
+```
+
+```bash
+# 启动
+docker-compose up -d
+
+# 查看日志
+docker-compose logs -f
+
+# 重启
+docker-compose restart
+
+# 停止
+docker-compose down
+```
+
+### 构建跨平台镜像（ARM + x86）
+
+如果需要在 x86 电脑上构建能部署到树莓派/ARM 设备的镜像：
+
+```bash
+# 启用 buildx
+docker buildx create --name mybuilder
+docker buildx use mybuilder
+
+# 构建 ARM64 镜像
+docker buildx build --platform linux/arm64 \
+  -t seeed-mcp-server:latest \
+  --push \
+  .
+
+# 在目标设备上拉取运行
+docker pull seeed-mcp-server:latest
+docker-compose up -d
+```
+
+### 注意事项
+
+- **Kiosk 浏览器**：需要图形界面，Docker 容器内无法直接访问宿主机的显示器（需要额外配置 X11 socket 或 VNC）
+- **推荐做法**：MCP 服务用 Docker 运行，Kiosk 浏览器仍在宿主机直接运行
+- **network_mode: host**：容器直接使用宿主机网络，确保 MCP WebSocket 连接正常
+
+### 部署到新设备流程
+
+```bash
+# 1. 拷贝项目
+scp -r ./MCP_Start recomputer@192.168.2.181:/home/recomputer/
+
+# 2. SSH 登录
+ssh recomputer@192.168.2.181
+
+# 3. 构建镜像
+cd /home/recomputer/Seeed/Project
+docker build -t seeed-mcp-server .
+
+# 4. 运行
+docker-compose up -d
+
+# 5. 验证
+docker-compose logs -f
+```
+
+---
+
 ## 注意事项
 
 1. **WiFi vs 有线**：默认使用 WiFi IP `192.168.2.181`，有线接入请使用 `192.168.2.177`
