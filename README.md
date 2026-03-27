@@ -6,41 +6,49 @@
 
 ## 项目概述
 
-本项目是 Seeed Studio 智慧仓管（StoreClerk）系统的 MCP（Model Context Protocol）启动器，通过 MCP 协议远程管理仓储设备，支持浏览器控制、仓库管�?UI/API 访问、以及可选的全屏 Kiosk 模式�?
-**跨平台支持：Windows / Linux**（Raspberry Pi OS、reComputer �?ARM/Linux 设备�?
+本项目是 Seeed Studio 智慧仓管（StoreClerk）系统的 MCP（Model Context Protocol）启动器，通过 MCP 协议远程管理仓储设备，支持浏览器控制、仓库管理 UI/API 访问、以及可选的全屏 Kiosk 模式。
+
+**跨平台支持：** Windows / Linux（Raspberry Pi OS、reComputer 等 ARM/Linux 设备）
+
 ---
 
 ## 目录结构
 
 ```
 MCP_Start/
-├── main.py                    # �?入口：启�?MCP 服务 + 可�?Kiosk 浏览�?├── server/
-�?  └── mcp_server.py         # �?MCP 工具函数（open_warehouse_ui/api�?├── browser_kiosk/             # �?全屏浏览器启动器�?-kiosk 模式�?�?  ├── __init__.py
-�?  └── kiosk_browser.py
+├── main.py                    # 入口：启动 MCP 服务 + 可选 Kiosk 浏览器
+├── server/
+│   └── mcp_server.py         # MCP 工具函数（open_warehouse_ui/api）
+├── browser_kiosk/             # 全屏浏览器启动器（--kiosk 模式）
+│   ├── __init__.py
+│   └── kiosk_browser.py
 ├── MCPConfig/
-�?  ├── mcp_pipe.py           # MCP WebSocket 代理（stdio �?WebSocket�?�?  ├── mcp_config_Win.json   # MCP 服务器配置（Windows�?�?  └── mcp_config_Linux.json # MCP 服务器配置（Linux�?├── globalData/
-�?  ├── GData.py               # �?全局配置（MCP endpoint + Kiosk 配置�?�?  ├── GObj.py                # 全局对象（BrowserTool�?�?  └── path.py                # 路径配置
+│   ├── mcp_pipe.py           # MCP WebSocket 代理（stdio ↔ WebSocket）
+│   ├── mcp_config_Win.json   # MCP 服务器配置（Windows）
+│   └── mcp_config_Linux.json # MCP 服务器配置（Linux）
+├── globalData/
+│   ├── GData.py               # 全局配置（MCP endpoint + Kiosk 配置）
+│   ├── GObj.py                # 全局对象（BrowserTool）
+│   └── path.py                # 路径配置
 ├── SysManger/
-�?  ├── Sys_env.py             # 环境变量/系统命令工具（跨平台�?�?  ├── Sys_JsonFile.py        # JSON 文件读写
-�?  └── debugOut.py            # 日志系统（彩色输�?+ 文件轮转�?└── tools/
+│   ├── Sys_env.py             # 环境变量/系统命令工具（跨平台）
+│   ├── Sys_JsonFile.py        # JSON 文件读写
+│   └── debugOut.py            # 日志系统（彩色输出 + 文件轮转）
+└── tools/
     └── browser.py             # 浏览器控制工具（跨平台）
 ```
 
-> **标注 �?的文�?文件夹为本次新增或频繁修改的内容�?*
-
 ---
 
-## 快速开�?
+## 快速开始
+
 ### 1. 安装依赖
 
 ```bash
 pip install -r requirements.txt
 ```
 
-### 2. 配置 MCP Endpoint
-
-MCP Endpoint 已配置在 `globalData/GData.py` 中的 `GDat.mcp_point`，首次运行会自动加载�?
-### 3. 运行
+### 2. 运行
 
 ```bash
 python main.py
@@ -48,27 +56,29 @@ python main.py
 
 ---
 
-## 全局配置（globalData/GData.py�?
+## 全局配置（globalData/GData.py）
+
 ### MCP 配置
 
-| 配置�?| 说明 | 默认�?|
+| 配置项 | 说明 | 默认值 |
 |--------|------|--------|
-| `MCP_ENDPOINT_Name` | 环境变量�?| `"MCP_ENDPOINT"` |
+| `MCP_ENDPOINT_Name` | 环境变量名 | `"MCP_ENDPOINT"` |
 | `mcp_point` | WebSocket MCP 端点 URL | `wss://...` |
 
-### Kiosk 全屏浏览器配�?
-| 配置�?| 说明 | 默认�?|
+### Kiosk 全屏浏览器配置
+
+| 配置项 | 说明 | 默认值 |
 |--------|------|--------|
 | `KIOSK_ENABLED` | 是否启用 Kiosk 全屏模式 | `False` |
 | `KIOSK_URL` | 启动时打开的页面地址 | `"http://192.168.2.181:2125"` |
 | `KIOSK_BROWSER` | 使用的浏览器 | `"firefox"` |
 
-**启用 Kiosk 模式�?*
+**启用 Kiosk 模式：**
 ```python
 # globalData/GData.py
 KIOSK_ENABLED = True
-KIOSK_URL = "http://192.168.2.181:2125"   # 仓库管理系统 UI
-KIOSK_BROWSER = "firefox"                  # Linux: firefox/chromium
+KIOSK_URL = "http://192.168.2.181:2125"
+KIOSK_BROWSER = "firefox"
 ```
 
 ---
@@ -95,7 +105,8 @@ KIOSK_BROWSER = "firefox"                  # Linux: firefox/chromium
 
 ---
 
-## MCP 工具函数（server/mcp_server.py�?
+## MCP 工具函数（server/mcp_server.py）
+
 ### 仓库管理系统
 
 | 函数 | 功能 | 默认地址 |
@@ -103,25 +114,27 @@ KIOSK_BROWSER = "firefox"                  # Linux: firefox/chromium
 | `open_warehouse_ui()` | 打开仓库管理系统 Web UI | `http://192.168.2.181:2125` |
 | `open_warehouse_api()` | 打开仓库管理系统 API 文档 | `http://192.168.2.181:2124/docs` |
 
-**参数�?*
-- `device_ip` - `"192.168.2.181"`（WiFi）或 `"192.168.2.177"`（有线），默�?WiFi
+**参数：**
+- `device_ip` - `"192.168.2.181"`（WiFi）或 `"192.168.2.177"`（有线），默认 WiFi
 - `browser` - `edge`/`chrome`/`firefox`/`chromium`，默认自动选择
 
-**使用示例�?*
+**使用示例：**
 ```
-打开仓库管理系统           # �?192.168.2.181:2125
-打开仓库管理API文档         # �?192.168.2.181:2124/docs
-打开192.168.2.177仓库UI   # �?有线接入
-用chrome打开仓库系统        # �?指定浏览�?```
+打开仓库管理系统
+打开仓库管理API文档
+打开192.168.2.177仓库UI
+用chrome打开仓库系统
+```
 
-### 浏览器控�?
+### 浏览器控制
+
 | 函数 | 功能 |
 |------|------|
 | `open_webpage()` | 在浏览器中打开指定网页 |
-| `list_opened_webpages()` | 列出所有已打开的网�?|
+| `list_opened_webpages()` | 列出所有已打开的网页 |
 | `close_webpage()` | 关闭指定网页 |
-| `close_all_webpages()` | 关闭所有已打开的网�?|
-| `close_browser()` | 关闭指定浏览器的所有实�?|
+| `close_all_webpages()` | 关闭所有已打开的网页 |
+| `close_browser()` | 关闭指定浏览器的所有实例 |
 | `search_web()` | 使用搜索引擎搜索内容 |
 | `open_youtube()` / `open_bilibili()` | 打开视频网站 |
 
@@ -129,39 +142,61 @@ KIOSK_BROWSER = "firefox"                  # Linux: firefox/chromium
 
 | 函数 | 功能 |
 |------|------|
-| `toggle_browser_fullscreen()` | 切换浏览器全屏模�?|
+| `toggle_browser_fullscreen()` | 切换浏览器全屏模式 |
 | `enter_fullscreen()` | 进入全屏 |
-| `exit_fullscreen()` | 退出全�?|
+| `exit_fullscreen()` | 退出全屏 |
 
 ---
 
-## Kiosk 全屏浏览器（browser_kiosk/�?
+## Kiosk 全屏浏览器（browser_kiosk/）
+
 ### 功能说明
 
-`start_kiosk_browser()` �?`main.py` 启动时被调用�?- �?`KIOSK_ENABLED=True`，则�?`--kiosk`（全屏）模式打开 `KIOSK_URL` 指定的页�?- 支持 Linux 桌面环境检�?+ `sudo -u` 以登录用户身份启动浏览器
-- 支持 Windows 直接启动
+`start_kiosk_browser()` 在 `main.py` 启动时被调用。
+- 若 `KIOSK_ENABLED=True`，则以 `--kiosk`（全屏）模式打开 `KIOSK_URL` 指定的页面
+- 直接复用 `BrowserTool.open_webpage(kiosk=True)`，无需重复逻辑
+- 支持 Windows 和 Linux 桌面环境检测
 
 ### 调用流程
 
 ```
 main.py
-  └── start_kiosk_browser()       # Kiosk 启动�?        ├── GDat.KIOSK_ENABLED?   # 检查开�?        �?    ├── False �?直接返回（跳过）
-        �?    └── True �?继续
-        ├── GDat.KIOSK_URL        # 获取目标地址
-        ├── GDat.KIOSK_BROWSER    # 获取浏览器类�?        └── platform.system()     # 判断系统
-              ├── Windows �?_start_on_windows()
-              └── Linux   �?_start_on_linux()
-                    ├── _detect_desktop_env_linux()  # 检测桌面会�?                    └── sudo -u <user> <browser> --kiosk <url>
+  └── start_kiosk_browser()
+        ├── GDat.KIOSK_ENABLED? → False 直接返回
+        ├── GDat.KIOSK_URL
+        ├── GDat.KIOSK_BROWSER
+        └── GObj.browser.open_webpage(url, browser, kiosk=True)
+              ├── Windows → msedge/chrome/firefox --kiosk <url>
+              └── Linux   → sudo -u <user> <browser> --kiosk <url>
 ```
 
-### 浏览�?--kiosk 支持情况
+### 浏览器 --kiosk 支持情况
 
-| 浏览�?| Linux | Windows |
-|--------|--------|---------|
-| Firefox | �?| �?|
-| Chrome | �?| �?|
-| Edge | �?| �?|
-| Chromium | �?| �?|
+| 浏览器 | Linux | Windows |
+|--------|-------|---------|
+| Firefox | ✅ | ✅ |
+| Chrome | ✅ | ✅ |
+| Edge | ❌ | ✅ |
+| Chromium | ✅ | ✅ |
+
+---
+
+## 跨平台说明
+
+### Windows
+
+- 浏览器直接通过 `subprocess.Popen` 启动，无需额外配置
+- 浏览器检测顺序：msedge → chrome → firefox
+- Kiosk 模式直接启动，不涉及桌面会话检测
+
+### Linux
+
+- 依赖 `loginctl` 和 `/run/user/` 检测当前登录用户的桌面会话
+- 使用 `sudo -u <user>` 以登录用户身份启动浏览器（避免 root 启动 GUI）
+- 浏览器检测顺序（自动选择首个可用）：
+  - **firefox** → firefox-esr → firefox
+  - **chromium** → chromium-browser → chromium
+- 无头模式（headless，无图形桌面）下会跳过 Kiosk 浏览器启动，不影响 MCP 主程序运行
 
 ---
 
@@ -169,7 +204,9 @@ main.py
 
 - 日志保存路径：`.logs/`
 - 文件命名：`YYYY-MM-DD-all.log` / `YYYY-MM-DD-error.log`
-- 单文件最大：1MB，超出自动轮转，保留 3 个备�?- 控制台彩色输出（DEBUG/INFO/WARNING/ERROR/CRITICAL 五级�?
+- 单文件最大：1MB，超出自动轮转，保留 3 个备份
+- 控制台彩色输出（DEBUG/INFO/WARNING/ERROR/CRITICAL 五级）
+
 ```python
 from SysManger.debugOut import log
 
@@ -183,57 +220,52 @@ log.error("错误")
 
 ### 2026-03-27
 
-**新增功能�?*
+**新增功能：**
 
-1. **MCP 工具函数**（`server/mcp_server.py`�?   - `open_warehouse_ui(device_ip, browser)` - 打开仓库管理系统 Web UI
+1. **MCP 工具函数**（`server/mcp_server.py`）
+   - `open_warehouse_ui(device_ip, browser)` - 打开仓库管理系统 Web UI
    - `open_warehouse_api(device_ip, browser)` - 打开仓库管理系统 API 文档
 
-2. **Kiosk 全屏浏览�?*（`browser_kiosk/`�?   - 新增文件夹，包含 `kiosk_browser.py`
+2. **Kiosk 全屏浏览器**（`browser_kiosk/`）
+   - 新增文件夹，包含 `kiosk_browser.py`
    - 新增配置项：`KIOSK_ENABLED`、`KIOSK_URL`、`KIOSK_BROWSER`
-   - 支持 Windows �?Linux（桌面环境检测）
+   - 直接复用 `BrowserTool.open_webpage(kiosk=True)`，无需重复逻辑
+   - 支持 Windows 和 Linux（桌面环境检测）
 
-3. **main.py 更新**
-   - 启动时打�?Kiosk 配置信息
+3. **BrowserTool 增强**（`tools/browser.py`）
+   - `open_webpage()` 新增 `kiosk` 参数
+   - 新增 `_detect_desktop_env_for_kiosk()` 方法处理 Linux 桌面会话
+
+4. **main.py 更新**
+   - 启动时打印 Kiosk 配置信息
    - 调用 `start_kiosk_browser()` 启动可选全屏浏览器
 
-4. **README.md**
-   - 新增项目文档，每次修改同步更�?
-### 2026-03-27（重构）
+5. **README.md**
+   - 新增项目文档，每次修改同步更新
 
-**重构 Kiosk 浏览器逻辑�?*
+**修复问题：**
 
-- **tools/browser.py �?BrowserTool.open_webpage()**
-  - 新增 `kiosk` 参数：`open_webpage(url, browser, kiosk=False)`
-  - `kiosk=True` 时自动添�?`--kiosk` 参数，支�?Windows / Linux / macOS
-  - 新增 `_detect_desktop_env_for_kiosk()` 方法处理 Linux 桌面会话检�?+ sudo 用户切换
-  - Linux Kiosk 模式自动以登录用户身份启动浏览器（复�?BrowserTool，不再重复逻辑�?
-- **browser_kiosk/kiosk_browser.py**
-  - 大幅精简：不再重复浏览器启动逻辑
-  - 直接调用 `GObj.browser.open_webpage(url, browser, kiosk=True)`
-  - 代码量从 ~200 行缩减至 ~70 �?
 - **kiosk_browser.py**
-  - `import pwd` 移至 `_detect_desktop_env_linux()` 函数内部，解�?Windows �?`ModuleNotFoundError: No module named 'pwd'` 的问�?
-- **mcp_server.py �?WebSocket 1009 错误修复**
-  - 问题原因：MCP 工具�?docstring 过长（单个最�?~5938 字符），JSON-RPC 响应超出 WebSocket 默认缓冲区限�?  - 修复方式：将 `@mcp.tool()` 改为 `@mcp.tool(description="简短描�?)`，显式指定短描述，覆盖冗�?docstring
+  - `import pwd` 移至 `_detect_desktop_env_linux()` 函数内部，解决 Windows 上 `ModuleNotFoundError: No module named 'pwd'` 的问题
+
+- **mcp_server.py — WebSocket 1009 错误**
+  - 问题原因：MCP 工具的 docstring 过长（单个最长 ~5938 字符），JSON-RPC 响应超出 WebSocket 默认缓冲区限制
+  - 修复方式：将 `@mcp.tool()` 改为 `@mcp.tool(description="简短描述")`，显式指定短描述
   - 影响工具：`open_homeassistant`、`open_sensecraft_voice`、`open_rerouter_voice_service`、`open_warehouse_ui`、`open_warehouse_api`、`toggle_browser_fullscreen`、`enter_fullscreen`、`exit_fullscreen`
-  - 工具描述统一精简�?30 字以�?
+  - 工具描述统一精简至 30 字以内
+
+**重构：**
+
+- **Kiosk 逻辑重构**
+  - `browser_kiosk/kiosk_browser.py` 大幅精简，从 ~200 行缩减至 ~70 行
+  - 直接调用 `GObj.browser.open_webpage(url, browser, kiosk=True)`
+  - Linux Kiosk 模式自动以登录用户身份启动浏览器
+
 ---
 
-## 跨平台说�?
-### Windows
-
-- 浏览器直接通过 `subprocess.Popen` 启动，无需额外配置
-- 浏览器检测顺序：msedge �?chrome �?firefox
-- Kiosk 模式直接启动，不涉及桌面会话检�?
-### Linux
-
-- 依赖 `loginctl` �?`/run/user/` 检测当前登录用户的桌面会话
-- 使用 `sudo -u <user>` 以登录用户身份启动浏览器（避�?root 启动 GUI�?- 浏览器检测顺序（自动选择首个可用）：
-  - **firefox** �?firefox-esr �?firefox
-  - **chromium** �?chromium-browser �?chromium
-- 无头模式（headless，无图形桌面）下会跳�?Kiosk 浏览器启动，不影�?MCP 主程序运�?
 ## 注意事项
 
-1. **WiFi vs 有线**：默认使�?WiFi IP `192.168.2.181`，有线接入请使用 `192.168.2.177`
-2. **Kiosk 模式**：需要桌面环境支持，Linux 无头模式（headless）下会跳�?3. **浏览器权�?*：Kiosk 模式可能需要浏览器权限配置，参考各平台文档
-4. **sudo 权限**：Linux 上启动浏览器需�?sudo 权限用于 `sudo -u` 切换用户
+1. **WiFi vs 有线**：默认使用 WiFi IP `192.168.2.181`，有线接入请使用 `192.168.2.177`
+2. **Kiosk 模式**：需要桌面环境支持，Linux 无头模式（headless）下会跳过
+3. **浏览器权限**：Kiosk 模式可能需要浏览器权限配置，参考各平台文档
+4. **sudo 权限**：Linux 上启动浏览器需要 sudo 权限用于 `sudo -u` 切换用户
