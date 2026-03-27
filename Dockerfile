@@ -8,11 +8,13 @@ ENV PYTHONDONTWRITEBYTECODE=1
 # 设置非交互式、无缓冲输出
 ENV PYTHONUNBUFFERED=1
 
-# 安装系统依赖（浏览器相关）
+# 安装系统依赖
 RUN apt-get update && apt-get install -y --no-install-recommends \
     curl \
     gnupg \
     sudo \
+    xdotool \
+    wmctrl \
     && rm -rf /var/lib/apt/lists/*
 
 # 创建非 root 用户（避免权限问题）

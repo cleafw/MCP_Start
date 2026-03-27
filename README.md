@@ -48,7 +48,16 @@ MCP_Start/
 pip install -r requirements.txt
 ```
 
-### 2. 运行
+### 2. 安装系统依赖（必须）
+
+```bash
+sudo apt-get install -y xdotool wmctrl
+```
+
+- `xdotool`：模拟 F11 按键实现浏览器全屏切换
+- `wmctrl`：窗口管理工具
+
+### 3. 运行
 
 ```bash
 python main.py
