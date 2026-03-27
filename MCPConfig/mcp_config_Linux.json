@@ -1,0 +1,8 @@
+{
+  "mcpServers": {
+    "general_server": {
+      "command": "/home/pi/Seeed/Env/Pytho310/bin/python",
+      "args": ["./server/mcp_server.py"]
+    }
+  }
+}
