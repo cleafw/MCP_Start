@@ -241,8 +241,58 @@ main.py
 
 ---
 
+## 部署环境变更说明
+
+本项目部署到不同 Linux 设备时，以下配置需要手动修改。
+
+### 必改项：mcp_config_Linux.json
+
+```json
+{
+  "mcpServers": {
+    "general_server": {
+      "command": "/home/recomputer/Seeed/Env/bin/python",
+      "args": ["./server/mcp_server.py"]
+    }
+  }
+}
+```
+
+`command` 必须指向目标设备上虚拟环境中 Python 的绝对路径。
+
+**如何找到正确的 Python 路径：**
+```bash
+# SSH 登录目标设备，执行：
+ls <user_home>/Seeed/Env/bin/python*
+
+# 示例输出：
+# /home/recomputer/Seeed/Env/bin/python
+# /home/recomputer/Seeed/Env/bin/python3
+# /home/recomputer/Seeed/Env/bin/python3.11
+```
+
+将输出的完整路径填入 `command` 字段。
+
+### 部署路径规范
+
+项目在目标设备上的部署路径格式：
+```
+/home/<用户名>/Seeed/Project/
+```
+
+如果部署到不同用户或设备，需要修改：
+1. `MCPConfig/mcp_config_Linux.json` 的 `command` 路径
+2. `globalData/GData.py` 中的 `KIOSK_URL`（如设备 IP 变化）
+
+### Windows 配置不受影响
+
+`mcp_config_Win.json` 用于 Windows 开发环境，与 Linux 部署互不影响。
+
+---
+
 ## 注意事项
 
 1. **WiFi vs 有线**：默认使用 WiFi IP `192.168.2.181`，有线接入请使用 `192.168.2.177`
 2. **Kiosk 模式**：需要桌面环境支持，Linux 无头模式下会跳过
 3. **sudo 权限**：Linux 上启动 Kiosk 浏览器需要 sudo 权限
+4. **Python 路径**：部署到新设备后，必须先修改 `mcp_config_Linux.json` 中的 `command` 为目标设备的正确路径，否则 MCP 服务无法启动
