@@ -65,9 +65,8 @@ def open_webpage(url: str, browser: str = None) -> dict:
     print(f"[MCP] open_webpage called: url={url}, browser={browser}")
     return GObj.browser.open_webpage(url, browser)
 
-
 # 列出所有通过此工具打开的网页，显示详细信息
-@mcp.tool()
+# @mcp.tool()
 def list_opened_webpages() -> list:
     """
     列出所有已打开的网页
@@ -95,7 +94,6 @@ def list_opened_webpages() -> list:
     """
     print("[MCP] list_opened_webpages called")
     return GObj.browser.list_opened_webpages()
-
 
 # 关闭指定的网页，可通过索引或URL指定
 @mcp.tool()
@@ -132,7 +130,6 @@ def close_webpage(index: int = None, url: str = None) -> dict:
     """
     print(f"[MCP] close_webpage called: index={index}, url={url}")
     return GObj.browser.close_webpage(index=index, url=url)
-
 
 # 一键关闭所有通过此工具打开的网页
 @mcp.tool()
@@ -199,7 +196,7 @@ def close_browser(browser: str) -> dict:
 '''系统信息工具'''
 
 # 获取当前系统信息、支持的浏览器列表和优先级
-@mcp.tool()
+# @mcp.tool()
 def get_system_info() -> dict:
     """
     获取系统和浏览器信息
@@ -224,7 +221,7 @@ def get_system_info() -> dict:
     return GObj.browser.get_system_info()
 
 # 获取当前系统支持的所有浏览器及其命令映射
-@mcp.tool()
+# @mcp.tool()
 def get_supported_browsers() -> dict:
     """
     获取支持的浏览器列表
@@ -249,7 +246,6 @@ def get_supported_browsers() -> dict:
 
 
 '''网页搜索工具'''
-
 # 使用指定搜索引擎搜索内容（Google / Baidu）
 @mcp.tool()
 def search_web(query: str, engine: str = "google", browser: str = None) -> dict:
@@ -301,7 +297,7 @@ def search_web(query: str, engine: str = "google", browser: str = None) -> dict:
 
 
 # 打开YouTube视频网站，可选择搜索特定内容
-@mcp.tool()
+# @mcp.tool()
 def open_youtube(search_query: str = None, browser: str = None) -> dict:
     """
     打开 YouTube
@@ -365,7 +361,7 @@ def open_bilibili(search_query: str = None, browser: str = None) -> dict:
 '''批量操作工具'''
 
 # 批量打开多个网页，可使用相同或不同浏览器
-@mcp.tool()
+# @mcp.tool()
 def open_multiple_webpages(urls: list, browser: str = None) -> dict:
     """
     批量打开多个网页
@@ -571,7 +567,7 @@ def close_oldest_webpage() -> dict:
 
 '''智能家居'''
 # 打开 Home Assistant 智能家居控制页面
-@mcp.tool()
+@mcp.tool(description="打开 Home Assistant 智能家居控制面板")
 def open_homeassistant(browser: str = None) -> dict:
     """
     打开 Home Assistant 智能家居控制系统
@@ -632,7 +628,7 @@ def open_homeassistant(browser: str = None) -> dict:
 
 '''语音识别系统'''
 # 打开 SenseCraft Voice 语音识别系统
-@mcp.tool()
+@mcp.tool(description="打开 SenseCraft Voice 语音识别系统云端管理平台")
 def open_sensecraft_voice(browser: str = None) -> dict:
     """
     打开 SenseCraft Voice 语音识别系统（别名：语音识别管理平台、会议纪要管理平台）
@@ -739,7 +735,7 @@ def open_sensecraft_voice(browser: str = None) -> dict:
 
 
 # 打开 reRouter 本地语音识别服务
-@mcp.tool()
+@mcp.tool(description="打开 reRouter 本地语音识别服务页面")
 def open_rerouter_voice_service(device_ip: str = "192.168.2.142", browser: str = None) -> dict:
     """
     打开 reRouter 本地语音识别服务（别名：会议纪要系统）
@@ -820,8 +816,8 @@ def open_rerouter_voice_service(device_ip: str = "192.168.2.142", browser: str =
 
 '''智慧仓管系统'''
 # 打开仓库管理系统 UI
-@mcp.tool()
-def open_warehouse_ui(device_ip: str = "192.168.2.180", browser: str = None) -> dict:
+@mcp.tool(description="打开仓库管理系统 Web UI（端口 2125）")
+def open_warehouse_ui(device_ip: str = "192.168.2.181", browser: str = None) -> dict:
     """
     打开仓库管理系统 Web UI（别名：智慧仓管、WMS系统）
 
@@ -832,7 +828,7 @@ def open_warehouse_ui(device_ip: str = "192.168.2.180", browser: str = None) -> 
     - 设备名称：reComputer-R100x 智慧仓管
     - MAC地址：2C-CF-67-E8-E6-79
     - 有线IP：192.168.2.177
-    - WiFi IP：192.168.2.180
+    - WiFi IP：192.168.2.181
     - 默认登录用户：recomputer / 12345678
 
     功能入口：
@@ -840,9 +836,9 @@ def open_warehouse_ui(device_ip: str = "192.168.2.180", browser: str = None) -> 
     - API接口文档：端口 2124/docs
 
     Args:
-        device_ip (str, optional): 设备 IP 地址，默认为 "192.168.2.180"
+        device_ip (str, optional): 设备 IP 地址，默认为 "192.168.2.181"
             可选值：
-                - "192.168.2.180"（WiFi接入）
+                - "192.168.2.181"（WiFi接入）
                 - "192.168.2.177"（有线接入）
         browser (str, optional): 浏览器类型，默认为None（自动选择系统最佳浏览器）
             可选值：
@@ -870,7 +866,7 @@ def open_warehouse_ui(device_ip: str = "192.168.2.180", browser: str = None) -> 
         - "打开智慧仓管UI"
         - "打开仓储管理系统"
         - "用Chrome打开仓库管理"
-        - "打开192.168.2.180仓库系统"
+        - "打开192.168.2.181仓库系统"
         - "打开192.168.2.177仓库UI"
 
     Note:
@@ -895,8 +891,8 @@ def open_warehouse_ui(device_ip: str = "192.168.2.180", browser: str = None) -> 
 
 
 # 打开仓库管理系统 API 文档
-@mcp.tool()
-def open_warehouse_api(device_ip: str = "192.168.2.180", browser: str = None) -> dict:
+# @mcp.tool(description="打开仓库管理系统 API 文档（端口 2124/docs）")
+def open_warehouse_api(device_ip: str = "192.168.2.181", browser: str = None) -> dict:
     """
     打开仓库管理系统 API 接口文档（别名：WMS API）
 
@@ -907,16 +903,16 @@ def open_warehouse_api(device_ip: str = "192.168.2.180", browser: str = None) ->
     - 设备名称：reComputer-R100x 智慧仓管
     - MAC地址：2C-CF-67-E8-E6-79
     - 有线IP：192.168.2.177
-    - WiFi IP：192.168.2.180
+    - WiFi IP：192.168.2.181
 
     API 文档：
     - 地址：端口 2124/docs
     - 格式：Swagger UI / OpenAPI
 
     Args:
-        device_ip (str, optional): 设备 IP 地址，默认为 "192.168.2.180"
+        device_ip (str, optional): 设备 IP 地址，默认为 "192.168.2.181"
             可选值：
-                - "192.168.2.180"（WiFi接入）
+                - "192.168.2.181"（WiFi接入）
                 - "192.168.2.177"（有线接入）
         browser (str, optional): 浏览器类型，默认为None（自动选择系统最佳浏览器）
             可选值：
@@ -943,7 +939,7 @@ def open_warehouse_api(device_ip: str = "192.168.2.180", browser: str = None) ->
         - "打开仓库管理系统API文档"
         - "打开WMS API"
         - "查看仓储接口文档"
-        - "打开192.168.2.180的API文档"
+        - "打开192.168.2.181的API文档"
         - "打开192.168.2.177的API"
 
     Note:
@@ -977,7 +973,7 @@ sudo apt install -y wmctrl
 
 
 # 将浏览器窗口切换为全屏模式
-@mcp.tool()
+@mcp.tool(description="切换浏览器全屏模式（F11），enable=True 进入全屏，False 退出全屏")
 def toggle_browser_fullscreen(browser: str = None, enable: bool = True) -> dict:
     """
     切换浏览器全屏显示模式
@@ -1149,7 +1145,7 @@ def toggle_browser_fullscreen(browser: str = None, enable: bool = True) -> dict:
         }
 
 # 便捷函数：进入全屏
-@mcp.tool()
+@mcp.tool(description="将浏览器窗口设为全屏显示")
 def enter_fullscreen(browser: str = None) -> dict:
     """
     进入浏览器全屏模式
@@ -1172,7 +1168,7 @@ def enter_fullscreen(browser: str = None) -> dict:
     return toggle_browser_fullscreen(browser=browser, enable=True)
 
 # 便捷函数：退出全屏
-@mcp.tool()
+@mcp.tool(description="退出浏览器全屏模式")
 def exit_fullscreen(browser: str = None) -> dict:
     """
     退出浏览器全屏模式

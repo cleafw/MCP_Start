@@ -15,3 +15,8 @@ class GDat:
                  "pXVCJ9.eyJ1c2VySWQiOjExNDkyMiwiYWdlbnRJZCI6Njg0MzU4LCJlbmRwb2ludElkIjoiYWdlbnRfNjg0Mz"
                  "U4IiwicHVycG9zZSI6Im1jcC1lbmRwb2ludCIsImlhdCI6MTc3NDU3ODI5NSwiZXhwIjoxODA2MTM1ODk1fQ."
                  "EcQpOtO6H5yuBWLmLDmLPX8GieExE2xa-pF4DJ7LZ3CISmeqO6NY2SGXaGS_FbcKBL9FWGanPtx1ab__yQb7MQ")
+
+    # ========== Kiosk 全屏浏览器配置 ==========
+    KIOSK_ENABLED: bool = True                    # True = 启动时打开全屏浏览器，False = 禁用
+    KIOSK_URL: str = "http://192.168.2.181:2125" # Kiosk 模式打开的页面地址
+    KIOSK_BROWSER: str = "firefox"               # 使用的浏览器（Linux: firefox/chromium，Windows: edge/chrome/firefox）

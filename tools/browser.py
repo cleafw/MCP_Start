@@ -179,7 +179,7 @@ class BrowserTool:
     # ====================================
 
     # 在浏览器中打开指定网页 - 增强版
-    def open_webpage(self, url: str, browser: Optional[str] = None) -> Dict[str, any]:
+    def open_webpage(self, url: str, browser: Optional[str] = None, kiosk: bool = False) -> Dict[str, any]:
         """
         在浏览器中打开指定网页 - 增强版
 
@@ -200,6 +200,7 @@ class BrowserTool:
                 - "chromium"
                 - "edge" (Microsoft Edge，仅 Windows)
                 - "safari" (Safari，仅 macOS)
+            kiosk: bool, optional: 是否以全屏（--kiosk）模式打开，默认为 False
 
         Returns:
             dict: 包含执行结果的字典
@@ -247,11 +248,11 @@ class BrowserTool:
         if browser_cmd:
             try:
                 if self.system == 'Windows':
-                    result = self._open_on_windows(url, browser_cmd, browser)
+                    result = self._open_on_windows(url, browser_cmd, browser, kiosk)
                 elif self.system == 'Linux':
-                    result = self._open_on_linux(url, browser_cmd, browser)
+                    result = self._open_on_linux(url, browser_cmd, browser, kiosk)
                 elif self.system == 'Darwin':
-                    result = self._open_on_macos(url, browser_cmd, browser)
+                    result = self._open_on_macos(url, browser_cmd, browser, kiosk)
                 else:
                     result = None
 
