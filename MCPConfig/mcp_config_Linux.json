@@ -1,8 +1,10 @@
 {
   "mcpServers": {
     "general_server": {
-      "command": "/home/pi/Seeed/Env/Pytho310/bin/python",
-      "args": ["./server/mcp_server.py"]
+      "command": "/home/recomputer/Seeed/Env/bin/python",
+      "args": [
+        "./server/mcp_server.py"
+      ]
     }
   }
 }
