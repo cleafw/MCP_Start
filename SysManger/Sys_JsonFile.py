@@ -151,7 +151,7 @@ def json_file_save(file_path: Optional[str] = None, file_name: Optional[str] = N
         return False
 
 # 从 JSON 文件读取对象
-def json_file_read(file_path: Optional[str] = None, file_name: Optional[str] = None, full_path: Optional[str] = None, create_if_missing: bool = False, default_value: Any = None) -> Dict | List | Any:
+def json_file_read(file_path: Optional[str] = None, file_name: Optional[str] = None, full_path: Optional[str] = None, create_if_missing: bool = False, default_value: Any = None) -> Union[Dict, List, Any]:
     """
     从 JSON 文件读取对象
 
