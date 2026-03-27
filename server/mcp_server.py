@@ -1062,11 +1062,11 @@ def toggle_browser_fullscreen(browser: str = None, enable: bool = True) -> dict:
             # Linux 全屏：优先用 wmctrl（更可靠），配合 xdotool 激活窗口
             import time
 
-            # 浏览器 class 映射
+            # 浏览器 class 映射（使用 wmctrl -lx 输出的 class 名称）
             browser_class = {
                 "firefox": "firefox",
                 "chrome": "google-chrome",
-                "chromium": "chromium-browser",
+                "chromium": "chromium",
                 "edge": "microsoft-edge",
             }
             target = browser_class.get(browser, None)
@@ -1077,12 +1077,15 @@ def toggle_browser_fullscreen(browser: str = None, enable: bool = True) -> dict:
                 if target:
                     # 搜索指定浏览器的窗口
                     search = subprocess.run(
-                        ['wmctrl', '-la'],
+                        ['wmctrl', '-lx'],
                         capture_output=True, text=True
                     )
-                    windows = [line for line in search.stdout.splitlines() if target in line]
-                    if windows:
-                        win_id = windows[0].split()[0]  # 取第一个匹配的窗口
+                    matched_lines = [line for line in search.stdout.splitlines() if target in line]
+                    if matched_lines:
+                        match = re.match(rb'^(0x[0-9a-fA-F]+)', matched_lines[0])
+                        win_id = match.group(1).decode() if match else None
+                        if not win_id or not win_id.startswith('0x'):
+                            raise FileNotFoundError('Cannot parse window ID from matched line')
                         # 激活窗口（放到前台）
                         subprocess.run(['wmctrl', '-i', '-a', win_id], check=True)
                         time.sleep(0.3)  # 等待窗口激活
