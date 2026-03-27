@@ -1042,6 +1042,7 @@ def toggle_browser_fullscreen(browser: str = None, enable: bool = True) -> dict:
 
     import platform
     import subprocess
+    import re
 
     system = platform.system()
     action = "enter_fullscreen" if enable else "exit_fullscreen"
