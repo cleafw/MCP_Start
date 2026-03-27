@@ -35,7 +35,7 @@ MCP_Start/
 │   ├── Sys_JsonFile.py        # JSON 文件读写
 │   └── debugOut.py            # 日志系统（彩色输出 + 文件轮转）
 └── tools/
-    └── browser.py             # 浏览器控制工具（跨平台）
+    └── browser.py             # 浏览器控制工具（跨平台，支持 kiosk 全屏）
 ```
 
 ---
@@ -118,25 +118,16 @@ KIOSK_BROWSER = "firefox"
 - `device_ip` - `"192.168.2.181"`（WiFi）或 `"192.168.2.177"`（有线），默认 WiFi
 - `browser` - `edge`/`chrome`/`firefox`/`chromium`，默认自动选择
 
-**使用示例：**
-```
-打开仓库管理系统
-打开仓库管理API文档
-打开192.168.2.177仓库UI
-用chrome打开仓库系统
-```
-
 ### 浏览器控制
 
 | 函数 | 功能 |
 |------|------|
-| `open_webpage()` | 在浏览器中打开指定网页 |
+| `open_webpage()` | 在浏览器中打开指定网页，支持 `kiosk=True` 全屏模式 |
 | `list_opened_webpages()` | 列出所有已打开的网页 |
 | `close_webpage()` | 关闭指定网页 |
 | `close_all_webpages()` | 关闭所有已打开的网页 |
 | `close_browser()` | 关闭指定浏览器的所有实例 |
 | `search_web()` | 使用搜索引擎搜索内容 |
-| `open_youtube()` / `open_bilibili()` | 打开视频网站 |
 
 ### 全屏控制
 
@@ -166,7 +157,7 @@ main.py
         ├── GDat.KIOSK_URL
         ├── GDat.KIOSK_BROWSER
         └── GObj.browser.open_webpage(url, browser, kiosk=True)
-              ├── Windows → msedge/chrome/firefox --kiosk <url>
+              ├── Windows → <browser> --kiosk <url>
               └── Linux   → sudo -u <user> <browser> --kiosk <url>
 ```
 
@@ -193,9 +184,7 @@ main.py
 
 - 依赖 `loginctl` 和 `/run/user/` 检测当前登录用户的桌面会话
 - 使用 `sudo -u <user>` 以登录用户身份启动浏览器（避免 root 启动 GUI）
-- 浏览器检测顺序（自动选择首个可用）：
-  - **firefox** → firefox-esr → firefox
-  - **chromium** → chromium-browser → chromium
+- 浏览器检测顺序（自动选择首个可用）：firefox / firefox-esr / chromium / chromium-browser
 - 无头模式（headless，无图形桌面）下会跳过 Kiosk 浏览器启动，不影响 MCP 主程序运行
 
 ---
@@ -206,13 +195,6 @@ main.py
 - 文件命名：`YYYY-MM-DD-all.log` / `YYYY-MM-DD-error.log`
 - 单文件最大：1MB，超出自动轮转，保留 3 个备份
 - 控制台彩色输出（DEBUG/INFO/WARNING/ERROR/CRITICAL 五级）
-
-```python
-from SysManger.debugOut import log
-
-log.info("信息")
-log.error("错误")
-```
 
 ---
 
@@ -229,43 +211,38 @@ log.error("错误")
 2. **Kiosk 全屏浏览器**（`browser_kiosk/`）
    - 新增文件夹，包含 `kiosk_browser.py`
    - 新增配置项：`KIOSK_ENABLED`、`KIOSK_URL`、`KIOSK_BROWSER`
-   - 直接复用 `BrowserTool.open_webpage(kiosk=True)`，无需重复逻辑
-   - 支持 Windows 和 Linux（桌面环境检测）
+   - 直接复用 `BrowserTool.open_webpage(kiosk=True)`
 
 3. **BrowserTool 增强**（`tools/browser.py`）
    - `open_webpage()` 新增 `kiosk` 参数
+   - `_open_on_linux()` / `_open_on_windows()` / `_open_on_macos()` 均支持 `kiosk` 参数
    - 新增 `_detect_desktop_env_for_kiosk()` 方法处理 Linux 桌面会话
 
 4. **main.py 更新**
    - 启动时打印 Kiosk 配置信息
    - 调用 `start_kiosk_browser()` 启动可选全屏浏览器
 
-5. **README.md**
-   - 新增项目文档，每次修改同步更新
-
 **修复问题：**
 
+- **tools/browser.py — Linux Kiosk 参数缺失**
+  - 问题：`_open_on_linux()` 未添加 `kiosk` 参数，导致 `takes 4 positional arguments but 5 were given`
+  - 修复：三个 `_open_on_*` 方法均添加 `kiosk: bool = False` 参数
+  - Pi 端已通过 SSH 同步修复
+
 - **kiosk_browser.py**
-  - `import pwd` 移至 `_detect_desktop_env_linux()` 函数内部，解决 Windows 上 `ModuleNotFoundError: No module named 'pwd'` 的问题
+  - `import pwd` 移至 `_detect_desktop_env_for_kiosk()` 函数内部，解决 Windows `ModuleNotFoundError`
 
 - **mcp_server.py — WebSocket 1009 错误**
-  - 问题原因：MCP 工具的 docstring 过长（单个最长 ~5938 字符），JSON-RPC 响应超出 WebSocket 默认缓冲区限制
-  - 修复方式：将 `@mcp.tool()` 改为 `@mcp.tool(description="简短描述")`，显式指定短描述
-  - 影响工具：`open_homeassistant`、`open_sensecraft_voice`、`open_rerouter_voice_service`、`open_warehouse_ui`、`open_warehouse_api`、`toggle_browser_fullscreen`、`enter_fullscreen`、`exit_fullscreen`
-  - 工具描述统一精简至 30 字以内
+  - 问题：工具 docstring 过长（单个最长 ~5938 字符），超出 WebSocket 缓冲区
+  - 修复：`@mcp.tool(description="简短描述")` 显式指定短描述
 
-**重构：**
-
-- **Kiosk 逻辑重构**
-  - `browser_kiosk/kiosk_browser.py` 大幅精简，从 ~200 行缩减至 ~70 行
-  - 直接调用 `GObj.browser.open_webpage(url, browser, kiosk=True)`
-  - Linux Kiosk 模式自动以登录用户身份启动浏览器
+- **requirements.txt**
+  - 补充缺失依赖：`colorlog`, `websockets`, `python-dotenv`
 
 ---
 
 ## 注意事项
 
 1. **WiFi vs 有线**：默认使用 WiFi IP `192.168.2.181`，有线接入请使用 `192.168.2.177`
-2. **Kiosk 模式**：需要桌面环境支持，Linux 无头模式（headless）下会跳过
-3. **浏览器权限**：Kiosk 模式可能需要浏览器权限配置，参考各平台文档
-4. **sudo 权限**：Linux 上启动浏览器需要 sudo 权限用于 `sudo -u` 切换用户
+2. **Kiosk 模式**：需要桌面环境支持，Linux 无头模式下会跳过
+3. **sudo 权限**：Linux 上启动 Kiosk 浏览器需要 sudo 权限

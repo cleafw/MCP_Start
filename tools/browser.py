@@ -343,12 +343,97 @@ class BrowserTool:
                     "system": self.system
                 }
 
+
+    # 检测 Linux 桌面环境（用于 Kiosk 模式）
+    def _detect_desktop_env_for_kiosk(self):
+        """检测 Linux 桌面环境，返回 (env_dict, username, uid)，未检测到返回 (None, None, None)"""
+        import pwd
+        import subprocess
+        import os
+
+        # 方法1: loginctl
+        try:
+            out = subprocess.check_output(
+                ["loginctl", "list-sessions", "--no-legend"], stderr=subprocess.DEVNULL
+            ).decode()
+            for line in out.strip().splitlines():
+                parts = line.split()
+                if len(parts) < 2:
+                    continue
+                sid, user = parts[0], parts[1]
+                show = subprocess.check_output(
+                    ["loginctl", "show-session", sid], stderr=subprocess.DEVNULL
+                ).decode()
+                info = dict(kv.split("=", 1) for kv in (l for l in show.splitlines() if "=" in l))
+                if info.get("Active") == "yes" and info.get("Seat") == "seat0":
+                    stype = info.get("Type", "")
+                    if stype in ("x11", "wayland"):
+                        uid = int(info.get("User", "1000"))
+                        try:
+                            user_info = pwd.getpwuid(uid)
+                            user = user_info.pw_name
+                        except KeyError:
+                            continue
+                        xdg = f"/run/user/{uid}"
+                        env = {
+                            "XDG_RUNTIME_DIR": xdg,
+                            "DBUS_SESSION_BUS_ADDRESS": f"unix:path={xdg}/bus",
+                            "DISPLAY": info.get("Display") or os.environ.get("DISPLAY", ":0"),
+                        }
+                        for candidate in ("wayland-0", "wayland-1"):
+                            if os.path.exists(os.path.join(xdg, candidate)):
+                                env["WAYLAND_DISPLAY"] = candidate
+                                break
+                        xauth = os.path.join(user_info.pw_dir, ".Xauthority")
+                        if os.path.exists(xauth):
+                            env["XAUTHORITY"] = xauth
+                        return env, user, uid
+        except Exception:
+            pass
+
+        # 方法2: /run/user/
+        try:
+            for uid_str in os.listdir("/run/user"):
+                if not uid_str.isdigit():
+                    continue
+                uid = int(uid_str)
+                try:
+                    user_info = pwd.getpwuid(uid)
+                    user = user_info.pw_name
+                    home = user_info.pw_dir
+                    xdg = f"/run/user/{uid}"
+                    if not os.path.isdir(xdg):
+                        continue
+                    env = {
+                        "XDG_RUNTIME_DIR": xdg,
+                        "DBUS_SESSION_BUS_ADDRESS": f"unix:path={xdg}/bus",
+                        "DISPLAY": os.environ.get("DISPLAY", ":0"),
+                    }
+                    for candidate in ("wayland-0", "wayland-1"):
+                        if os.path.exists(os.path.join(xdg, candidate)):
+                            env["WAYLAND_DISPLAY"] = candidate
+                            break
+                    xauth = os.path.join(home, ".Xauthority")
+                    if os.path.exists(xauth):
+                        env["XAUTHORITY"] = xauth
+                    return env, user, uid
+                except KeyError:
+                    continue
+        except Exception:
+            pass
+
+        return None, None, None
+
     # 在 Windows 上打开浏览器
-    def _open_on_windows(self, url: str, browser_cmd: str, browser_name: str) -> Dict[str, any]:
+    def _open_on_windows(self, url: str, browser_cmd: str, browser_name: str, kiosk: bool = False) -> Dict[str, any]:
         """在 Windows 上打开浏览器"""
         try:
+            args = [browser_cmd]
+            if kiosk:
+                args.append("--kiosk")
+            args.append(url)
             process = subprocess.Popen(
-                [browser_cmd, url],
+                args,
                 stdout=subprocess.DEVNULL,
                 stderr=subprocess.DEVNULL
             )
@@ -364,56 +449,85 @@ class BrowserTool:
             log.error(f"[浏览器控制] ❌ 打开失败: {str(e)}")
             return {"success": False}
 
-    def _open_on_linux(self, url: str, browser_cmd: str, browser_name: str):
-        """在 Linux 上打开浏览器 - 树莓派优化版"""
+    def _open_on_linux(self, url: str, browser_cmd: str, browser_name: str, kiosk: bool = False):
+        """在 Linux 上打开浏览器 - 树莓派优化版，支持 kiosk 全屏模式"""
         import os
         import subprocess
         import time
 
         try:
-            # 设置环境变量 (关键!)
-            env = os.environ.copy()
-            if 'DISPLAY' not in env:
-                env['DISPLAY'] = ':0'
-                log.info(f"[浏览器控制] 设置 DISPLAY=:0")
+            args = [browser_cmd]
+            if kiosk:
+                args.append("--kiosk")
+            args.append(url)
 
-            # 启动浏览器（使用更新后的真实命令）
-            log.info(f"[浏览器控制] 执行命令: {browser_cmd} {url}")
-            process = subprocess.Popen(
-                [browser_cmd, url],
-                stdout=subprocess.DEVNULL,
-                stderr=subprocess.DEVNULL,
-                start_new_session=True,
-                env=env  # 使用包含 DISPLAY 的环境变量
-            )
+            if kiosk:
+                # Kiosk 模式需要桌面用户身份启动
+                env_dict, user, uid = self._detect_desktop_env_for_kiosk()
+                if not env_dict:
+                    log.warning("[浏览器控制] 未检测到桌面会话，Kiosk 模式可能失败")
+                    env_dict = os.environ.copy()
+                    user = None
+                log.info(f"[浏览器控制] 执行命令: {' '.join(args)} (user={user})")
+                if user:
+                    cmd = ["sudo", "-u", user, "env"] + [f"{k}={v}" for k, v in env_dict.items() if v] + args
+                    process = subprocess.Popen(
+                        cmd,
+                        stdout=subprocess.DEVNULL,
+                        stderr=subprocess.DEVNULL,
+                        start_new_session=True,
+                        env=env_dict
+                    )
+                else:
+                    process = subprocess.Popen(
+                        args,
+                        stdout=subprocess.DEVNULL,
+                        stderr=subprocess.DEVNULL,
+                        start_new_session=True,
+                        env=env_dict
+                    )
+            else:
+                env = os.environ.copy()
+                if 'DISPLAY' not in env:
+                    env['DISPLAY'] = ':0'
+                    log.info(f"[浏览器控制] 设置 DISPLAY=:0")
+                log.info(f"[浏览器控制] 执行命令: {' '.join(args)}")
+                process = subprocess.Popen(
+                    args,
+                    stdout=subprocess.DEVNULL,
+                    stderr=subprocess.DEVNULL,
+                    start_new_session=True,
+                    env=env
+                )
 
             # 等待确保进程启动
             time.sleep(0.5)
 
             # 检查进程是否还在运行
             if process.poll() is None:
-                log.info(f"[浏览器控制] ✅ 成功打开 {browser_name}: {url}")
+                mode = "Kiosk" if kiosk else ""
+                log.info(f"[浏览器控制] 成功打开 {browser_name} {mode}: {url}")
                 return {
                     "success": True,
-                    "message": f"✅ 已在 {browser_name} 浏览器中打开: {url}",
+                    "message": f"已在 {browser_name} 浏览器中打开: {url}",
                     "browser_used": browser_name,
                     "system": "Linux",
                     "pid": process.pid
                 }
             else:
-                log.error(f"[浏览器控制] ❌ 浏览器进程立即退出")
+                log.error(f"[浏览器控制] 浏览器进程立即退出")
                 return {"success": False}
 
         except Exception as e:
-            log.error(f"[浏览器控制] ❌ 打开失败: {str(e)}")
+            log.error(f"[浏览器控制] 打开失败: {str(e)}")
             return {"success": False}
 
-    # 在 macOS 上打开浏览器
-    def _open_on_macos(self, url: str, browser_cmd: str, browser_name: str) -> Dict[str, any]:
+
+    def _open_on_macos(self, url: str, browser_cmd: str, browser_name: str, kiosk: bool = False) -> Dict[str, any]:
         """在 macOS 上打开浏览器"""
         try:
             process = subprocess.Popen(
-                ['open', '-a', browser_cmd, url],
+                ['open', '-a', browser_cmd] + (['--args', '--kiosk'] if kiosk else []) + [url],
                 stdout=subprocess.DEVNULL,
                 stderr=subprocess.DEVNULL
             )
