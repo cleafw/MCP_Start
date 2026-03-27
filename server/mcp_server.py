@@ -1059,29 +1059,89 @@ def toggle_browser_fullscreen(browser: str = None, enable: bool = True) -> dict:
             method = "Ctrl+Cmd+F"
 
         elif system == "Linux":
-            # Linux 使用 xdotool 发送 F11
-            try:
-                # 首先尝试获取活动窗口
-                result = subprocess.run(['xdotool', 'getactivewindow'],
-                                        capture_output=True, text=True, check=True)
-                window_id = result.stdout.strip()
+            # Linux 全屏：优先用 wmctrl（更可靠），配合 xdotool 激活窗口
+            import time
 
-                # 发送 F11 键
-                subprocess.run(['xdotool', 'key', '--window', window_id, 'F11'], check=True)
-                method = "F11 (xdotool)"
+            # 浏览器 class 映射
+            browser_class = {
+                "firefox": "firefox",
+                "chrome": "google-chrome",
+                "chromium": "chromium-browser",
+                "edge": "microsoft-edge",
+            }
+            target = browser_class.get(browser, None)
+
+            try:
+                # 方案1：wmctrl 直接设置全屏属性（最可靠）
+                # 先找到浏览器窗口，然后激活并设置全屏
+                if target:
+                    # 搜索指定浏览器的窗口
+                    search = subprocess.run(
+                        ['wmctrl', '-la'],
+                        capture_output=True, text=True
+                    )
+                    windows = [line for line in search.stdout.splitlines() if target in line]
+                    if windows:
+                        win_id = windows[0].split()[0]  # 取第一个匹配的窗口
+                        # 激活窗口（放到前台）
+                        subprocess.run(['wmctrl', '-i', '-a', win_id], check=True)
+                        time.sleep(0.3)  # 等待窗口激活
+                        # 设置全屏属性
+                        if enable:
+                            subprocess.run(
+                                ['wmctrl', '-i', '-r', win_id, '-b', 'add,fullscreen'],
+                                check=True
+                            )
+                        else:
+                            subprocess.run(
+                                ['wmctrl', '-i', '-r', win_id, '-b', 'remove,fullscreen'],
+                                check=True
+                            )
+                        method = f"wmctrl ({target})"
+                    else:
+                        raise FileNotFoundError(f"No window found for {target}")
+
+                else:
+                    # 没有指定浏览器，对活动窗口操作
+                    subprocess.run(['wmctrl', '-r', ':ACTIVE:', '-b', 'add,fullscreen'], check=True)
+                    method = "wmctrl (:ACTIVE:)"
 
             except (subprocess.CalledProcessError, FileNotFoundError):
-                # 如果 xdotool 不可用，尝试使用 wmctrl
+                # 方案2：xdotool（查找窗口 + 激活 + F11）
                 try:
-                    if enable:
-                        subprocess.run(['wmctrl', '-r', ':ACTIVE:', '-b', 'add,fullscreen'], check=True)
+                    if target:
+                        # 搜索浏览器窗口并激活
+                        result = subprocess.run(
+                            ['xdotool', 'search', '--class', target],
+                            capture_output=True, text=True
+                        )
+                        window_ids = [wid for wid in result.stdout.strip().splitlines() if wid]
+                        if not window_ids:
+                            raise FileNotFoundError(f"No xdotool window for {target}")
+                        window_id = window_ids[0]
+                        # 激活窗口
+                        subprocess.run(['xdotool', 'windowactivate', '--sync', window_id],
+                                       capture_output=True, text=True)
+                        time.sleep(0.5)
+                        # 发送 F11
+                        subprocess.run(['xdotool', 'key', '--window', window_id, 'F11'],
+                                       check=True)
+                        method = f"xdotool F11 ({target})"
                     else:
-                        subprocess.run(['wmctrl', '-r', ':ACTIVE:', '-b', 'remove,fullscreen'], check=True)
-                    method = "wmctrl"
+                        # 活动窗口
+                        result = subprocess.run(['xdotool', 'getactivewindow'],
+                                               capture_output=True, text=True, check=True)
+                        window_id = result.stdout.strip()
+                        if not window_id:
+                            raise FileNotFoundError("No active window")
+                        subprocess.run(['xdotool', 'key', '--window', window_id, 'F11'],
+                                       check=True)
+                        method = "xdotool F11 (active)"
+
                 except (subprocess.CalledProcessError, FileNotFoundError):
                     return {
                         "success": False,
-                        "message": "❌ Linux 系统需要安装 xdotool 或 wmctrl 工具",
+                        "message": "Linux 全屏失败：xdotool 和 wmctrl 均不可用，请安装：sudo apt-get install -y xdotool wmctrl",
                         "action": action,
                         "browser": browser,
                         "system": system,
