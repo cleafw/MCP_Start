@@ -290,6 +290,56 @@ ls <user_home>/Seeed/Env/bin/python*
 
 ---
 
+## 开机自启动（systemd 服务）
+
+已在 reComputer-R100x 上配置为 systemd 系统服务，开机自动启动 MCP 服务。
+
+**服务文件：** `/etc/systemd/system/mcp-start.service`
+
+**管理命令（在 Pi 上执行）：**
+```bash
+# 查看服务状态
+sudo systemctl status mcp-start.service
+
+# 启动 / 停止 / 重启
+sudo systemctl start mcp-start.service
+sudo systemctl stop mcp-start.service
+sudo systemctl restart mcp-start.service
+
+# 查看实时日志
+sudo journalctl -u mcp-start.service -f
+
+# 禁用自启动
+sudo systemctl disable mcp-start.service
+```
+
+**重新加载配置（修改 service 文件后）：**
+```bash
+sudo systemctl daemon-reload
+sudo systemctl restart mcp-start.service
+```
+
+**服务内容（已部署到 Pi）：**
+```ini
+[Unit]
+Description=Seeed MCP Start - Smart Warehouse MCP Service
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=recomputer
+WorkingDirectory=/home/recomputer/Seeed/Project
+ExecStart=/home/recomputer/Seeed/Env/bin/python /home/recomputer/Seeed/Project/main.py
+Restart=on-failure
+RestartSec=10
+
+[Install]
+WantedBy=multi-user.target
+```
+
+---
+
 ## 注意事项
 
 1. **WiFi vs 有线**：默认使用 WiFi IP `192.168.2.181`，有线接入请使用 `192.168.2.177`
